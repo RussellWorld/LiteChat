@@ -40,8 +40,9 @@ class SignInActivity : AppCompatActivity() {
             }
         }
         mBinding.btnSingninGoogleAcc.setOnClickListener {
-
+            signInWithGoogle()
         }
+        checkAuthState()
     }
 
     private fun getClient(): GoogleSignInClient {
@@ -63,9 +64,17 @@ class SignInActivity : AppCompatActivity() {
         auth.signInWithCredential(credential).addOnCompleteListener {
             if (it.isSuccessful) {
                 Toast.makeText(this, "uspeh", Toast.LENGTH_SHORT).show()
+                checkAuthState()
             } else {
                 Toast.makeText(this, "error", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun checkAuthState() {
+        if (auth.currentUser != null) {
+            val i = Intent(this, MainActivity::class.java)
+            startActivity(i)
         }
     }
 
