@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.DataSnapshot
@@ -20,6 +21,7 @@ class MainActivity : AppCompatActivity() {
     private var _binding: ActivityMainBinding? = null
     private val mBinding get() = _binding!!
     lateinit var auth: FirebaseAuth
+    lateinit var adapter: UserAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,9 +33,22 @@ class MainActivity : AppCompatActivity() {
         val database = Firebase.database
         val myRef = database.getReference("messages")
         mBinding.bSend.setOnClickListener {
-            myRef.setValue(mBinding.eMessage.text.toString())
+            myRef.child(myRef.push().key ?: "blabla")
+                .setValue(auth.currentUser?.displayName?.let { it1 ->
+                    User(
+                        it1,
+                        mBinding.eMessage.text.toString()
+                    )
+                })
         }
         onChangeListener(myRef)
+        initRcView()
+    }
+
+    private fun initRcView() = with(mBinding) {
+        adapter = UserAdapter()
+        rcView.layoutManager = LinearLayoutManager(this@MainActivity)
+        rcView.adapter = adapter
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -52,10 +67,12 @@ class MainActivity : AppCompatActivity() {
     private fun onChangeListener(dbRef: DatabaseReference) {
         dbRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                mBinding.apply {
-                    rcVIew.append("\n")
-                    rcVIew.append(snapshot.value.toString())
+                val list = ArrayList<User>()
+                for (s in snapshot.children){
+                    val user = s.getValue(User::class.java)
+                    if (user != null) list.add(user)
                 }
+                adapter.submitList(list)
             }
 
             override fun onCancelled(error: DatabaseError) {
